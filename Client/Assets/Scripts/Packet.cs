@@ -1,6 +1,5 @@
 using MemoryPack;
 using System;
-using UnityEngine;
 using System.Text;
 
 [MemoryPackable]
@@ -27,7 +26,7 @@ public struct Packet
 
     public byte[] Serialize()
     {
-        string packetData = $"{UserID}|{TimeStamp}|{Message}";
+        var packetData = $"{UserID}|{TimeStamp}|{Message}";
 
         var bin = Encoding.UTF8.GetBytes(packetData);
 
@@ -36,13 +35,13 @@ public struct Packet
 
     public static Packet Deserialize(byte[] bin)
     {
-        string packetData = Encoding.UTF8.GetString(bin);
+        var packetData = Encoding.UTF8.GetString(bin);
 
-        string[] splitData = packetData.Split('|');
+        var splitData = packetData.Split('|');
 
-        string userID = splitData[0];
-        string timeStamp = splitData[1];
-        string message = splitData[2];
+        var userID = splitData[0];
+        var timeStamp = splitData[1];
+        var message = splitData[2];
 
         return new Packet(userID, timeStamp, message);
     }

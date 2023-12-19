@@ -1,23 +1,26 @@
 using System.Collections;
 using UnityEngine;
 using System.Net.Sockets;
-using MemoryPack;
 using System;
 
 public class TcpChatCustomClient
 {
-    private TcpClient _client = null;
-    private const int _port = 7777;
+    private readonly TcpClient _client;
+    private const int Port = 7777;
 
-    private Action<Packet> OnReceivePacket = null;
-    public void AddReceivePacketListener(Action<Packet> listener) => OnReceivePacket += listener;
+    private Action<Packet> OnReceivePacket;
+
+    public void AddReceivePacketListener(Action<Packet> listener)
+    {
+        OnReceivePacket += listener;
+    }
 
     public TcpChatCustomClient()
     {
         try
         {
             _client = new TcpClient();
-            _client.Connect("127.0.0.1", _port);
+            _client.Connect("127.0.0.1", Port);
         }
         catch (Exception e)
         {
@@ -38,18 +41,18 @@ public class TcpChatCustomClient
     public IEnumerator Receive()
     {
         var stream = _client.GetStream();
-        byte[] bin;
 
         while (true)
         {
             if (_client.Available > 0)
             {
-                bin = new byte[_client.Available];
-                stream.Read(bin, 0, bin.Length);
+                var bin = new byte[_client.Available];
+                _ = stream.Read(bin, 0, bin.Length);
 
                 var packet = Packet.Deserialize(bin);
                 OnReceivePacket?.Invoke(packet);
             }
+
             yield return null;
         }
     }

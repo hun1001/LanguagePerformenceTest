@@ -1,27 +1,24 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Clock : MonoBehaviour
 {
-    [SerializeField]
-    private Text _timeText = null;
+    [SerializeField] private Text timeText;
 
     private DateTime _startDateTime = DateTime.MinValue;
     private DateTime _endDateTime = DateTime.MaxValue;
     private TimeSpan _timeSpan = TimeSpan.Zero;
 
-    void Update()
+    private void Update()
     {
-        _timeText.text = DateTime.Now.ToString("T");
+        timeText.text = DateTime.Now.ToString("T");
     }
 
     public string GetTime()
     {
-        return _timeText.text;
+        return timeText.text;
     }
 
     public void StartRecord()
@@ -43,7 +40,7 @@ public class Clock : MonoBehaviour
 
     private IEnumerator RecordCoroutine()
     {
-        while(true)
+        while (true)
         {
             _timeSpan = DateTime.Now - _startDateTime;
 
