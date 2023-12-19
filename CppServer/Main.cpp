@@ -1,5 +1,4 @@
 #include <iostream>
-#include <atlstr.h>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <thread>
@@ -69,7 +68,7 @@ int main()
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(7777);
-	inet_pton(AF_INET, "221.140.152.102", &addr.sin_addr);
+	inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
 	if(bind(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR)
 	{

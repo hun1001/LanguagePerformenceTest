@@ -45,6 +45,7 @@ impl Packet {
 #[tokio::main]
 async fn main() {
     let tcp = TcpListener::bind("127.0.0.1:7777").await.unwrap();
+    println!("Listening on port 7777");
 
     let mut writers: Vec<OwnedWriteHalf> = Vec::new();
 
@@ -54,6 +55,7 @@ async fn main() {
     tokio::spawn(async move {
         loop {
             let (socket, _) = tcp.accept().await.unwrap();
+            println!("New client connected");
             socket_sender.send(socket).unwrap();
         }
     });
