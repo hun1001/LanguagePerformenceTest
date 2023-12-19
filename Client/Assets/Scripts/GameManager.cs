@@ -145,6 +145,7 @@ public class GameManager : MonoBehaviour
         {
             _stopwatch.Stop();
             long microseconds = _stopwatch.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
+            _stopwatch.Reset();
 
             UnityEngine.Debug.Log($"Microsec Time: {microseconds}");
         }

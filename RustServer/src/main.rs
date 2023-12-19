@@ -61,7 +61,6 @@ async fn main() {
                         return;
                     }
                     let packet = Packet::deserialize(&buf);
-                    println!("{:?}", packet);
                     sender.send(packet).unwrap();
                 }
             });

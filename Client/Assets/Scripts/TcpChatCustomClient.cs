@@ -17,7 +17,7 @@ public class TcpChatCustomClient
         try
         {
             _client = new TcpClient();
-            _client.Connect("221.140.152.102", _port);
+            _client.Connect("127.0.0.1", _port);
         }
         catch (Exception e)
         {
