@@ -1,5 +1,7 @@
+use crossbeam_channel::unbounded;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
+use tokio::net::tcp::OwnedWriteHalf;
+use tokio::net::{TcpListener, TcpStream};
 
 #[derive(Debug)]
 struct Packet {
@@ -9,14 +11,6 @@ struct Packet {
 }
 
 impl Packet {
-    fn new(user_id: String, time_stamp: String, message: String) -> Self {
-        Self {
-            user_id,
-            time_stamp,
-            message,
-        }
-    }
-
     fn serialize(&self) -> Vec<u8> {
         let mut buf = Vec::new();
         buf.extend_from_slice(self.user_id.as_bytes());
@@ -40,36 +34,43 @@ impl Packet {
 #[tokio::main]
 async fn main() {
     let tcp = TcpListener::bind("127.0.0.1:7777").await.unwrap();
-    let mut writers = Vec::new();
-    let (sender, mut receiver) = crossbeam_channel::unbounded();
+
+    let mut writers: Vec<OwnedWriteHalf> = Vec::new();
+
+    let (sender, receiver) = unbounded::<Packet>();
+    let (socket_sender, socket_receiver) = unbounded::<TcpStream>();
 
     tokio::spawn(async move {
         loop {
-            let packet = receiver.recv().unwrap();
-            for writer in writers.iter_mut() {
-                writer.write_all(&packet.serialize()).await.unwrap();
-            }
+            let (socket, _) = tcp.accept().await.unwrap();
+            socket_sender.send(socket).unwrap();
         }
     });
 
     loop {
-        let (mut socket, _) = tcp.accept().await.unwrap();
-        let (mut reader, writer) = socket.split();
-        let sender = sender.clone();
+        if let Ok(socket) = socket_receiver.try_recv() {
+            let (mut reader, writer) = socket.into_split();
+            let sender = sender.clone();
+            writers.push(writer);
 
-        writers.push(writer);
-
-        tokio::spawn(async move {
-            let mut buf = [0; 1024];
-            loop {
-                let n = reader.read(&mut buf).await.unwrap();
-                if n == 0 {
-                    return;
+            tokio::spawn(async move {
+                let mut buf = [0; 1024];
+                loop {
+                    let n = reader.read(&mut buf).await.unwrap();
+                    if n == 0 {
+                        return;
+                    }
+                    let packet = Packet::deserialize(&buf);
+                    println!("{:?}", packet);
+                    sender.send(packet).unwrap();
                 }
-                let packet = Packet::deserialize(&buf);
-                println!("{:?}", packet);
-                sender.send(packet).unwrap();
+            });
+        }
+
+        if let Ok(packet) = receiver.try_recv() {
+            for writer in writers.iter_mut() {
+                writer.write_all(&packet.serialize()).await.unwrap();
             }
-        });
+        }
     }
 }
