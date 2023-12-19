@@ -26,21 +26,13 @@ impl Packet {
         let mut time_stamp = String::new();
         let mut message = String::new();
 
-        let mut i = 0;
-        while buf[i] != '|' as u8 {
-            user_id.push(buf[i] as char);
-            i += 1;
-        }
-        i += 1;
-        while buf[i] != '|' as u8 {
-            time_stamp.push(buf[i] as char);
-            i += 1;
-        }
-        i += 1;
-        while i < buf.len() {
-            message.push(buf[i] as char);
-            i += 1;
-        }
+        let string = String::from_utf8_lossy(buf);
+
+        let mut iter = string.split("|");
+
+        user_id.push_str(iter.next().unwrap());
+        time_stamp.push_str(iter.next().unwrap());
+        message.push_str(iter.next().unwrap());
 
         Self {
             user_id,
@@ -80,7 +72,6 @@ async fn main() {
                         return;
                     }
                     let packet = Packet::deserialize(&buf);
-                    println!("{:?}", packet);
                     sender.send(packet).unwrap();
                 }
             });
