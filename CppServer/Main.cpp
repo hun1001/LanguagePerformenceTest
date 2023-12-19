@@ -13,56 +13,56 @@ using namespace std;
 vector<SOCKET> g_clients;
 vector<thread*> g_threads;
 
-void Broadcast(Packet packet)
+void broadcast(Packet packet)
 {
 	BYTE* buf = packet.Serialize();
-	int len = sizeof(packet);
 
-	for (SOCKET s : g_clients)
+	for (const SOCKET s : g_clients)
 	{
-		send(s, (char*)buf, len, 0);
+		constexpr int len = sizeof(packet);
+		send(s, reinterpret_cast<char*>(buf), len, 0);
 	}
 }
 
-void ClientThread(SOCKET sock)
+void client_thread(const SOCKET sock)
 {
 	while (true)
 	{
 		BYTE buf[1024];
-		int len = recv(sock, (char*)buf, sizeof(buf), 0);
+		const int len = recv(sock, reinterpret_cast<char*>(buf), sizeof(buf), 0);
 
 		if (len == SOCKET_ERROR)
 		{
-			cout << "recv failed with error: " << WSAGetLastError() << endl;
+			cout << "recv failed with error: " << WSAGetLastError() << '\n';
 			return;
 		}
 
 		if (len == 0)
 		{
-			cout << "client disconnected" << endl;
+			cout << "client disconnected" << '\n';
 			return;
 		}
 
-		Packet packet = Packet::Deserialize(buf, len);;
+		const Packet packet = Packet::Deserialize(buf, len);
 
-		Broadcast(packet);
+		broadcast(packet);
 	}
 }
 
 int main()
 {
-	WSADATA wsaData;
-	if(WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
+	WSADATA wsa_data;
+	if(WSAStartup(MAKEWORD(2, 2), &wsa_data) != NO_ERROR)
 	{
-		cout << "WSAStartup failed with error: " << WSAGetLastError() << endl;
+		cout << "WSAStartup failed with error: " << WSAGetLastError() << '\n';
 		return 1;
 	}
 
-	SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	const SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if(s == INVALID_SOCKET)
 	{
-		cout << "socket failed with error: " << WSAGetLastError() << endl;
+		cout << "socket failed with error: " << WSAGetLastError() << '\n';
 		return 1;
 	}
 
@@ -71,36 +71,34 @@ int main()
 	addr.sin_port = htons(7777);
 	inet_pton(AF_INET, "221.140.152.102", &addr.sin_addr);
 
-	if(bind(s, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR)
+	if(bind(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR)
 	{
-		cout << "bind failed with error: " << WSAGetLastError() << endl;
+		cout << "bind failed with error: " << WSAGetLastError() << '\n';
 		return 1;
 	}
 
 	if(listen(s, SOMAXCONN) == SOCKET_ERROR)
 	{
-		cout << "listen failed with error: " << WSAGetLastError() << endl;
+		cout << "listen failed with error: " << WSAGetLastError() << '\n';
 		return 1;
 	}
 
-	cout << "server started" << endl;
+	cout << "server started" << '\n';
 	
 	while (true)
 	{
-		SOCKET accSock = accept(s, NULL, NULL);
+		SOCKET acc_sock = accept(s, nullptr, nullptr);
 
-		if(accSock == INVALID_SOCKET)
+		if(acc_sock == INVALID_SOCKET)
 		{
-			cout << "accept failed with error: " << WSAGetLastError() << endl;
+			cout << "accept failed with error: " << WSAGetLastError() << '\n';
 			return 1;
 		}
 
-		cout << "client connected" << endl;
+		cout << "client connected" << '\n';
 
-		g_clients.push_back(accSock);
-		thread* t = new thread(ClientThread, accSock);
+		g_clients.push_back(acc_sock);
+		auto t = new thread(client_thread, acc_sock);
 		g_threads.push_back(t);
 	}
-
-	return 0;
 }
