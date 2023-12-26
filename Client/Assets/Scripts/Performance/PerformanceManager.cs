@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using UnityEngine;
 
 public class PerformanceManager : MonoBehaviour
@@ -18,7 +19,7 @@ public class PerformanceManager : MonoBehaviour
     private TcpChatMemoryPackClient[] _memoryPackClients => _clientsDictionary[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
 
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
-    private Dictionary<string, Stopwatch> _stopwatch;
+    private Dictionary<string, ServerWatch> _serverwatchDictionary;
 
     #region Logic
 
@@ -38,31 +39,51 @@ public class PerformanceManager : MonoBehaviour
         }
 
         _performancePanels = new Dictionary<ServerType, PerformancePanel>();
+        _serverwatchDictionary = new Dictionary<string, ServerWatch>();
     }
 
     private void Start()
     {
+        SetBaseClient();
         SetPerformancePanel();
 
         foreach(var cl in _clientsDictionary)
         {
-            
+            if(cl.Key.Equals(ServerType.CSMemoryPack))
+            {
+                for(int i = 0; i<_clientCount; ++i)
+                {
+                    StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
+                }
+            }
+            else
+            {
+                for(int i = 0;i<_clientCount; ++i)
+                {
+                    StartCoroutine( ClientSender( cl.Key, $"Test{i}", i ) );
+                }
+            }
         }
-    }
-
-    private void Update()
-    {
-        
-    }
-
-    private void FixedUpdate()
-    {
-        
     }
 
     #endregion
 
     #region Methods
+
+    private void SetBaseClient()
+    {
+        foreach(var clients in _clientsDictionary)
+        {
+            if(clients.Key.Equals( ServerType.CSMemoryPack ) )
+            {
+                _memoryPackClients[ 0 ].AddReceivePacketListener( ReceivePacket );
+            }
+            else
+            {
+                clients.Value[ 0 ].AddReceivePacketListener( ReceivePacket );
+            }
+        }
+    }
 
     private void SetPerformancePanel()
     {
@@ -85,41 +106,68 @@ public class PerformanceManager : MonoBehaviour
         }
     }
 
-    private IEnumerator ClientSender(ServerType serverType, string userID)
+    private IEnumerator ClientSender(ServerType serverType, string userID, int index)
     {
         for(int i = 0;i<_aClientSendCount;++i )
         {
-            
+            string msg = MessageGenerator.newMessage();
+            Packet packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
+
+            _serverwatchDictionary.Add(msg, new ServerWatch(serverType));
+
+            _serverwatchDictionary[msg].Start();
+            _clientsDictionary[ serverType ][ index ].Send( packet );
+
             yield return null;
         }
     }
 
-    private IEnumerator ClientMemorySender(string userID)
+    private IEnumerator ClientMemorySender(string userID, int index)
     {
-        yield return null;
-    }
-
-    private IEnumerator Send( ServerType serverType, Packet packet )
-    {
-        for( int j = 0; j < _aClientSendCount; ++j )
+        for( int i = 0; i<_aClientSendCount; ++i )
         {
-            for( int i = 0; i < _clientCount; ++i )
-            {
-                _clientsDictionary[ serverType ][ i ].Send( packet );
-                yield return null;
-            }
+            string msg = MessageGenerator.newMessage();
+            Packet packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
+
+            _serverwatchDictionary.Add( msg, new ServerWatch( ServerType.CSMemoryPack ) );
+
+            _serverwatchDictionary[ msg ].Start();
+            _clientsDictionary[ ServerType.CSMemoryPack ][ index ].Send( packet );
+
+            yield return null;
         }
     }
 
-    private IEnumerator Send( MemoryPackPacket packet )
+    private void ReceivePacket(Packet packet)
     {
-        for( int j = 0; j < _aClientSendCount; ++j )
+        if( _serverwatchDictionary.ContainsKey( packet.Message ) )
         {
-            for( int i = 0; i < _clientCount; ++i )
-            {
-                _memoryPackClients[ i ].Send( packet );
-                yield return null;
-            }
+            ServerWatch watch = _serverwatchDictionary[ packet.Message ];
+            watch.Stop();
+
+            var microseconds = watch.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
+            _performancePanels[ watch.ServerType ].Add( microseconds );
+
+        }
+        else
+        {
+            UnityEngine.Debug.LogError( "Not Contain Key" );
+        }
+    }
+
+    private void ReceivePacket(MemoryPackPacket packet )
+    {
+        if( _serverwatchDictionary.ContainsKey( packet.Message ) )
+        {
+            ServerWatch watch = _serverwatchDictionary[ packet.Message ];
+            watch.Stop();
+
+            var microseconds = watch.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
+            _performancePanels[ watch.ServerType ].Add( microseconds );
+        }
+        else
+        {
+            UnityEngine.Debug.LogError( "Not Contain Key" );
         }
     }
 

@@ -8,12 +8,12 @@ public class PerformancePanel : MonoBehaviour
     [SerializeField] private Text languageText;
     [SerializeField] private Text InformationText;
 
-    private uint _avrLatency = 0;
-    private uint _minLatency = 0;
-    private uint _maxLatency = 0;
+    private long _avrLatency = 0;
+    private long _minLatency = 0;
+    private long _maxLatency = 0;
 
-    private uint _sumLatency = 0;
-    private uint _recvCount = 0;
+    private long _sumLatency = 0;
+    private long _recvCount = 0;
 
     public void Init(string language)
     {
@@ -22,7 +22,7 @@ public class PerformancePanel : MonoBehaviour
         InformationText.text = $"Average: {_avrLatency} ¥ìs\r\n\r\nMin Latency: {_minLatency} ¥ìs\r\n\r\nMax Latency: {_maxLatency} ¥ìs";
     }
 
-    public void Add(uint latency)
+    public void Add(long latency)
     {
         _sumLatency += latency;
         ++_recvCount;
