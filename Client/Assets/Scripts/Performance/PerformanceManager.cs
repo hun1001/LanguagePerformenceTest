@@ -80,14 +80,18 @@ public class PerformanceManager : MonoBehaviour
     {
         for (int i = 0; i < _clientCount; ++i)
         {
-            _clientsDictionary[ serverType ][i] = new T();
-            _clientsDictionary[ serverType ][i].Init(serverType);
+            _clientsDictionary[ serverType ][ i ] = new T();
+            _clientsDictionary[ serverType ][ i ].Init( serverType );
         }
     }
 
-    private IEnumerator ClientSender(string userID)
+    private IEnumerator ClientSender(ServerType serverType, string userID)
     {
-        yield return null;
+        for(int i = 0;i<_aClientSendCount;++i )
+        {
+            
+            yield return null;
+        }
     }
 
     private IEnumerator ClientMemorySender(string userID)
