@@ -5,19 +5,19 @@ using UnityEngine;
 
 public class PerformanceManager : MonoBehaviour
 {
-    [Header("Settings")]
-    [SerializeField] private int _clientCount = 100;
+    [Header("Settings")] [SerializeField] private int _clientCount = 100;
     [SerializeField] private int _aClientSendCount = 10;
 
-    [Header("UI")]
-    [SerializeField] private Transform _contentTransform;
+    [Header("UI")] [SerializeField] private Transform _contentTransform;
     [SerializeField] private PerformancePanel _performancePrefab;
 
     private Dictionary<ServerType, TcpChatClient[]> _clientsDictionary;
-    private TcpChatMemoryPackClient[] _memoryPackClients => _clientsDictionary[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
+
+    private TcpChatMemoryPackClient[] MemoryPackClients =>
+        _clientsDictionary[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
 
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
-    private Dictionary<string, ServerWatch> _serverwatchDictionary;
+    private Dictionary<string, ServerWatch> _serverWatchDictionary;
 
     #region Logic
 
@@ -25,18 +25,18 @@ public class PerformanceManager : MonoBehaviour
     {
         _clientsDictionary = new Dictionary<ServerType, TcpChatClient[]>();
         _performancePanels = new Dictionary<ServerType, PerformancePanel>();
-        _serverwatchDictionary = new Dictionary<string, ServerWatch>();
+        _serverWatchDictionary = new Dictionary<string, ServerWatch>();
 
-        foreach( ServerType serverType in Enum.GetValues( typeof( ServerType ) ) )
+        foreach (ServerType serverType in Enum.GetValues(typeof(ServerType)))
         {
-            _clientsDictionary.Add( serverType, new TcpChatClient[ _clientCount ] );
-            if( serverType.Equals( ServerType.CSMemoryPack ) )
+            _clientsDictionary.Add(serverType, new TcpChatClient[_clientCount]);
+            if (serverType.Equals(ServerType.CSMemoryPack))
             {
                 //InitClients<TcpChatMemoryPackClient>( serverType );
             }
             else
             {
-                InitClients<TcpChatClient>( serverType );
+                InitClients<TcpChatClient>(serverType);
             }
         }
     }
@@ -46,20 +46,20 @@ public class PerformanceManager : MonoBehaviour
         SetBaseClient();
         SetPerformancePanel();
 
-        foreach(var cl in _clientsDictionary)
+        foreach (var cl in _clientsDictionary)
         {
-            if(cl.Key.Equals(ServerType.CSMemoryPack))
+            if (cl.Key.Equals(ServerType.CSMemoryPack))
             {
-                for(int i = 0; i<_clientCount; ++i)
-                {
-                    //StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
-                }
+                // for (int i = 0; i < _clientCount; ++i)
+                // {
+                //     //StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
+                // }
             }
             else
             {
-                for(int i = 0;i<_clientCount; ++i)
+                for (var i = 0; i < _clientCount; ++i)
                 {
-                    StartCoroutine( ClientSender( cl.Key, $"Test{i}", i ) );
+                    StartCoroutine(ClientSender(cl.Key, $"Test{i}", i));
                 }
             }
         }
@@ -71,26 +71,26 @@ public class PerformanceManager : MonoBehaviour
 
     private void SetBaseClient()
     {
-        foreach(var clients in _clientsDictionary)
+        foreach (var clients in _clientsDictionary)
         {
-            if(clients.Key.Equals( ServerType.CSMemoryPack ) )
+            if (clients.Key.Equals(ServerType.CSMemoryPack))
             {
                 //(clients.Value[ 0 ] as TcpChatMemoryPackClient).AddReceivePacketListener( ReceiveMemoryPacket );
             }
             else
             {
-                clients.Value[ 0 ].AddReceivePacketListener( ReceivePacket );
+                clients.Value[0].AddReceivePacketListener(ReceivePacket);
             }
         }
     }
 
     private void SetPerformancePanel()
     {
-        foreach(var clients in _clientsDictionary)
+        foreach (var clients in _clientsDictionary)
         {
             var panel = Instantiate(_performancePrefab, _contentTransform).GetComponent<PerformancePanel>();
 
-            panel.Init( Converter.GetLanguage( clients.Key ) );
+            panel.Init(Converter.GetLanguage(clients.Key));
 
             _performancePanels.Add(clients.Key, panel);
         }
@@ -98,24 +98,24 @@ public class PerformanceManager : MonoBehaviour
 
     private void InitClients<T>(ServerType serverType) where T : TcpChatClient, new()
     {
-        for (int i = 0; i < _clientCount; ++i)
+        for (var i = 0; i < _clientCount; ++i)
         {
-            _clientsDictionary[ serverType ][ i ] = new T();
-            _clientsDictionary[ serverType ][ i ].Init( serverType );
+            _clientsDictionary[serverType][i] = new T();
+            _clientsDictionary[serverType][i].Init(serverType);
         }
     }
 
     private IEnumerator ClientSender(ServerType serverType, string userID, int index)
     {
-        for(int i = 0;i<_aClientSendCount;++i )
+        for (var i = 0; i < _aClientSendCount; ++i)
         {
-            string msg = MessageGenerator.newMessage();
-            Packet packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
+            var msg = MessageGenerator.newMessage();
+            var packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
 
-            _serverwatchDictionary.Add(msg, new ServerWatch(serverType));
+            _serverWatchDictionary.Add(msg, new ServerWatch(serverType));
 
-            _serverwatchDictionary[msg].Start();
-            _clientsDictionary[ serverType ][ index ].Send( packet );
+            _serverWatchDictionary[msg].Start();
+            _clientsDictionary[serverType][index].Send(packet);
 
             yield return null;
         }
@@ -123,15 +123,15 @@ public class PerformanceManager : MonoBehaviour
 
     private IEnumerator ClientMemorySender(string userID, int index)
     {
-        for( int i = 0; i<_aClientSendCount; ++i )
+        for (var i = 0; i < _aClientSendCount; ++i)
         {
-            string msg = MessageGenerator.newMessage();
-            Packet packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
+            var msg = MessageGenerator.newMessage();
+            var packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
 
-            _serverwatchDictionary.Add( msg, new ServerWatch( ServerType.CSMemoryPack ) );
+            _serverWatchDictionary.Add(msg, new ServerWatch(ServerType.CSMemoryPack));
 
-            _serverwatchDictionary[ msg ].Start();
-            _clientsDictionary[ ServerType.CSMemoryPack ][ index ].Send( packet );
+            _serverWatchDictionary[msg].Start();
+            _clientsDictionary[ServerType.CSMemoryPack][index].Send(packet);
 
             yield return null;
         }
@@ -139,36 +139,35 @@ public class PerformanceManager : MonoBehaviour
 
     private void ReceivePacket(Packet packet)
     {
-        Debug.Log( "Recv Packet Data" );
+        Debug.Log("Recv Packet Data");
 
-        if( _serverwatchDictionary.ContainsKey( packet.Message ) )
+        if (_serverWatchDictionary.ContainsKey(packet.Message))
         {
-            ServerWatch watch = _serverwatchDictionary[ packet.Message ];
+            var watch = _serverWatchDictionary[packet.Message];
             watch.Stop();
 
-            _performancePanels[ watch.ServerType ].Add( watch.GetMicroseconds() );
-
+            _performancePanels[watch.ServerType].Add(watch.GetMicroseconds());
         }
         else
         {
-            Debug.LogError( "Not Contain Key" );
+            Debug.LogError("Not Contain Key");
         }
     }
 
-    private void ReceiveMemoryPacket(MemoryPackPacket packet )
+    private void ReceiveMemoryPacket(MemoryPackPacket packet)
     {
-        Debug.Log( "Recv Memory Data" );
+        Debug.Log("Recv Memory Data");
 
-        if( _serverwatchDictionary.ContainsKey( packet.Message ) )
+        if (_serverWatchDictionary.ContainsKey(packet.Message))
         {
-            ServerWatch watch = _serverwatchDictionary[ packet.Message ];
+            var watch = _serverWatchDictionary[packet.Message];
             watch.Stop();
 
-            _performancePanels[ watch.ServerType ].Add( watch.GetMicroseconds() );
+            _performancePanels[watch.ServerType].Add(watch.GetMicroseconds());
         }
         else
         {
-            Debug.LogError( "Not Contain Key" );
+            Debug.LogError("Not Contain Key");
         }
     }
 

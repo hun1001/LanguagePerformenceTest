@@ -2,9 +2,12 @@ using System.Collections;
 using UnityEngine;
 using System.Net.Sockets;
 using System;
+using System.Collections.Generic;
 
 public class TcpChatClient
 {
+    private static readonly Dictionary<ServerType, bool> FailedServerDictionary = new();
+
     protected TcpClient _client;
     private int Port;
 
@@ -15,28 +18,48 @@ public class TcpChatClient
         OnReceivePacket += listener;
     }
 
-    public TcpChatClient() { }
+    public TcpChatClient()
+    {
+    }
 
-    public TcpChatClient( ServerType st ) => Init(st);
+    public TcpChatClient(ServerType st) => Init(st);
 
     public void Init(ServerType serverType)
     {
+        if (FailedServerDictionary.ContainsKey(serverType) && FailedServerDictionary[serverType])
+        {
+            return;
+        }
+
         Port = (int)serverType;
 
         try
         {
             _client = new TcpClient();
-            _client.Connect( "127.0.0.1", Port );
+            if (_client.ConnectAsync("127.0.0.1", Port).Wait(1000))
+            {
+                Debug.Log($"Connected to server {serverType}");
+            }
+            else
+            {
+                Debug.Log($"Failed to connect to server {serverType}");
+                FailedServerDictionary[serverType] = true;
+            }
         }
-        catch( Exception e )
+        catch (Exception e)
         {
-            Debug.Log( e.Message );
+            Debug.Log(e.Message);
             Application.Quit();
         }
     }
 
     public void Send(Packet packet)
     {
+        if (_client is not { Connected: true })
+            return;
+
+        Debug.Log($"Send Packet Data: {packet.Message}");
+
         var bin = packet.Serialize();
         var stream = _client.GetStream();
 
@@ -46,6 +69,7 @@ public class TcpChatClient
 
     public virtual IEnumerator Receive()
     {
+        Debug.Log("Start Receive");
         var stream = _client.GetStream();
 
         while (true)
@@ -57,6 +81,8 @@ public class TcpChatClient
 
                 var packet = Packet.Deserialize(bin);
                 OnReceivePacket?.Invoke(packet);
+
+                Debug.Log($"Recv Packet Data: {packet.Message}");
             }
 
             yield return null;
