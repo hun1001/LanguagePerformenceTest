@@ -900,7 +900,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 021c3d4eab06ca64694d41a2f7604e1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _timeText: {fileID: 942461503}
+  timeText: {fileID: 942461503}
 --- !u!4 &719204064
 Transform:
   m_ObjectHideFlags: 0
@@ -2019,13 +2019,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b6aed852b050084aa5d3286089e2e70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _userIdInputField: {fileID: 879043378}
-  _messageInputField: {fileID: 1837106939}
-  _messageListTransform: {fileID: 1525713256}
-  _scrollbar: {fileID: 196096690}
-  _chatObject: {fileID: 9219034725965099919, guid: 122cd5b12001ec44a93799f0fbae9563, type: 3}
-  _clock: {fileID: 719204063}
-  _protocol: 0
+  userIdInputField: {fileID: 879043378}
+  messageInputField: {fileID: 1837106939}
+  messageListTransform: {fileID: 1525713256}
+  scrollbar: {fileID: 196096690}
+  chatObject: {fileID: 9219034725965099919, guid: 122cd5b12001ec44a93799f0fbae9563, type: 3}
+  clock: {fileID: 719204063}
+  protocol: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

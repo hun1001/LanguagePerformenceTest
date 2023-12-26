@@ -2,6 +2,14 @@ using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum ServerType : uint
+{
+    CSMemoryPack = 1111,
+    CSCustom = 2222,
+    Cpp = 3333,
+    Rust = 4444,
+}
+
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private InputField userIdInputField;

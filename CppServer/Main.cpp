@@ -30,18 +30,6 @@ void client_thread(const SOCKET sock)
 		BYTE buf[1024];
 		const int len = recv(sock, reinterpret_cast<char*>(buf), sizeof(buf), 0);
 
-		if (len == SOCKET_ERROR)
-		{
-			cout << "recv failed with error: " << WSAGetLastError() << '\n';
-			return;
-		}
-
-		if (len == 0)
-		{
-			cout << "client disconnected" << '\n';
-			return;
-		}
-
 		const Packet packet = Packet::Deserialize(buf, len);
 
 		broadcast(packet);
