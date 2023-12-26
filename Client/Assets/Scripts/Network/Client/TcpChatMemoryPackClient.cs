@@ -11,14 +11,14 @@ public class TcpChatMemoryPackClient : TcpChatClient
     public TcpChatMemoryPackClient( ServerType st) : base(st)
     {   }
 
-    private Action<MsgPackPacket> OnReceivePacket;
+    private Action<MemoryPackPacket> OnReceivePacket;
 
-    public void AddReceivePacketListener(Action<MsgPackPacket> listener)
+    public void AddReceivePacketListener(Action<MemoryPackPacket> listener)
     {
         OnReceivePacket += listener;
     }
 
-    public void Send(MsgPackPacket packet)
+    public void Send(MemoryPackPacket packet)
     {
         var bin = MemoryPackSerializer.Serialize(packet);
         var stream = _client.GetStream();
@@ -38,7 +38,7 @@ public class TcpChatMemoryPackClient : TcpChatClient
                 var bin = new byte[_client.Available];
                 _ = stream.Read(bin, 0, bin.Length);
 
-                var packet = MemoryPackSerializer.Deserialize<MsgPackPacket>(bin);
+                var packet = MemoryPackSerializer.Deserialize<MemoryPackPacket>(bin);
                 OnReceivePacket?.Invoke(packet);
             }
 

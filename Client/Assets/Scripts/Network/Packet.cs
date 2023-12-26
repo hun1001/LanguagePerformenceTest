@@ -3,7 +3,7 @@ using System;
 using System.Text;
 
 [MemoryPackable]
-public partial class MsgPackPacket
+public partial class MemoryPackPacket
 {
     public string UserID { get; set; }
     public string TimeStamp { get; set; }

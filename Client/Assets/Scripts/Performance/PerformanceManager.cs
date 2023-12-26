@@ -1,7 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PerformanceManager : MonoBehaviour
 {
@@ -9,30 +9,57 @@ public class PerformanceManager : MonoBehaviour
     [SerializeField] private int _clientCount = 100;
     [SerializeField] private int _aClientSendCount = 10;
 
-    private Dictionary<ServerType, TcpChatClient[]> _clients;
-    private TcpChatMemoryPackClient[] _memoryPackClients => _clients[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
+    [Header("UI")]
+    [SerializeField] private Transform _contentTransform;
+    [SerializeField] private PerformancePanel _performancePrefab;
+
+    private Dictionary<ServerType, TcpChatClient[]> _clientsDictionary;
+    private TcpChatMemoryPackClient[] _memoryPackClients => _clientsDictionary[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
+
+    private Dictionary<ServerType, PerformancePanel> _performancePanels;
 
     #region Logic
 
     private void Awake()
     {
-        foreach (ServerType serverType in System.Enum.GetValues(typeof(ServerType)))
+        foreach( ServerType serverType in Enum.GetValues( typeof( ServerType ) ) )
         {
-            _clients.Add(serverType, new TcpChatClient[_clientCount]);
-            if(serverType.Equals(ServerType.CSMemoryPack))
+            _clientsDictionary.Add( serverType, new TcpChatClient[ _clientCount ] );
+            if( serverType.Equals( ServerType.CSMemoryPack ) )
             {
-                InitClients<TcpChatMemoryPackClient>(serverType);
+                InitClients<TcpChatMemoryPackClient>( serverType );
             }
             else
             {
-                InitClients<TcpChatClient>(serverType);
+                InitClients<TcpChatClient>( serverType );
             }
         }
+
+        _performancePanels = new Dictionary<ServerType, PerformancePanel>();
     }
 
     private void Start()
     {
+        SetPerformancePanel();
 
+        foreach(var cl in _clientsDictionary)
+        {
+            if(cl.Key.Equals(ServerType.CSMemoryPack))
+            {
+                MemoryPackPacket packet = new();
+
+                packet.UserID = "tester";
+                packet.TimeStamp = DateTime.Now.ToString( "T" );
+                packet.Message = "Hello Test";
+
+                StartCoroutine(Send(packet));
+            }
+            else
+            {
+                var packet = new Packet("tester", DateTime.Now.ToString( "T" ), "Hello Test");
+                StartCoroutine(Send(cl.Key, packet));
+            }
+        }
     }
 
     private void Update()
@@ -49,30 +76,57 @@ public class PerformanceManager : MonoBehaviour
 
     #region Methods
 
+    private void SetPerformancePanel()
+    {
+        foreach(var clients in _clientsDictionary)
+        {
+            var panel = Instantiate(_performancePrefab, _contentTransform).GetComponent<PerformancePanel>();
+
+            panel.Init(GetLanguage(clients.Key));
+
+            _performancePanels.Add(clients.Key, panel);
+        }
+    }
+
+    private string GetLanguage(ServerType serverType) => serverType switch
+    {
+        ServerType.CSCustom => "C#",
+        ServerType.CSMemoryPack => "C# MemoryPack",
+        ServerType.Cpp => "C++",
+        ServerType.Rust => "Rust",
+        _ => "Unknown"
+    };
+
     private void InitClients<T>(ServerType serverType) where T : TcpChatClient, new()
     {
         for (int i = 0; i < _clientCount; ++i)
         {
-            _clients[ serverType ][i] = new T();
-            _clients[ serverType ][i].Init(serverType);
+            _clientsDictionary[ serverType ][i] = new T();
+            _clientsDictionary[ serverType ][i].Init(serverType);
         }
     }
 
-    private IEnumerator SendPacket(ServerType serverType, Packet packet)
+    private IEnumerator Send( ServerType serverType, Packet packet )
     {
-        for (int i = 0; i < _clientCount; ++i)
+        for( int j = 0; j < _aClientSendCount; ++j )
         {
-            _clients[ serverType ][i].Send(packet);
-            yield return null;
+            for( int i = 0; i < _clientCount; ++i )
+            {
+                _clientsDictionary[ serverType ][ i ].Send( packet );
+                yield return null;
+            }
         }
     }
 
-    private IEnumerator SendPacket(ServerType serverType, MsgPackPacket packet)
+    private IEnumerator Send( MemoryPackPacket packet )
     {
-        for (int i = 0; i < _clientCount; ++i)
+        for( int j = 0; j < _aClientSendCount; ++j )
         {
-            _memoryPackClients[i]?.Send(packet);
-            yield return null;
+            for( int i = 0; i < _clientCount; ++i )
+            {
+                _memoryPackClients[ i ].Send( packet );
+                yield return null;
+            }
         }
     }
 

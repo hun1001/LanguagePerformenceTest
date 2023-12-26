@@ -60,7 +60,7 @@ public class ChatManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(userIdInputField.text) || string.IsNullOrEmpty(messageInputField.text)) return;
 
-        var packet = new MsgPackPacket
+        var packet = new MemoryPackPacket
         {
             UserID = userIdInputField.text,
             TimeStamp = clock.GetTime(),
@@ -93,7 +93,7 @@ public class ChatManager : MonoBehaviour
         if (messageListTransform.childCount > 1000) Destroy(messageListTransform.GetChild(0).gameObject);
     }
 
-    private void OnReceiveMemoryPackMessage(MsgPackPacket packet)
+    private void OnReceiveMemoryPackMessage(MemoryPackPacket packet)
     {
         var component = Instantiate(chatObject, messageListTransform).GetComponent<ChatObject>();
         component.SetText(packet);
