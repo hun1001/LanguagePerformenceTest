@@ -77,7 +77,7 @@ async fn main() {
                     sender.send(packet).unwrap();
                 }
             });
-        }
+        } 
 
         if let Ok(packet) = receiver.try_recv() {
             for writer in writers.iter_mut() {

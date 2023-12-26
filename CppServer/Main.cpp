@@ -14,6 +14,8 @@ vector<thread*> g_threads;
 
 void broadcast(Packet packet)
 {
+	cout << "broadcasting packet" << '\n';
+
 	BYTE* buf = packet.Serialize();
 
 	for (const SOCKET s : g_clients)

@@ -32,7 +32,7 @@ public class PerformanceManager : MonoBehaviour
             _clientsDictionary.Add( serverType, new TcpChatClient[ _clientCount ] );
             if( serverType.Equals( ServerType.CSMemoryPack ) )
             {
-                InitClients<TcpChatMemoryPackClient>( serverType );
+                //InitClients<TcpChatMemoryPackClient>( serverType );
             }
             else
             {
@@ -52,7 +52,7 @@ public class PerformanceManager : MonoBehaviour
             {
                 for(int i = 0; i<_clientCount; ++i)
                 {
-                    StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
+                    //StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
                 }
             }
             else
@@ -75,8 +75,7 @@ public class PerformanceManager : MonoBehaviour
         {
             if(clients.Key.Equals( ServerType.CSMemoryPack ) )
             {
-                while( clients.Value[ 0 ] == null ) { }
-                _memoryPackClients[ 0 ].AddReceivePacketListener( ReceivePacket );
+                //(clients.Value[ 0 ] as TcpChatMemoryPackClient).AddReceivePacketListener( ReceiveMemoryPacket );
             }
             else
             {
@@ -140,6 +139,8 @@ public class PerformanceManager : MonoBehaviour
 
     private void ReceivePacket(Packet packet)
     {
+        Debug.Log( "Recv Packet Data" );
+
         if( _serverwatchDictionary.ContainsKey( packet.Message ) )
         {
             ServerWatch watch = _serverwatchDictionary[ packet.Message ];
@@ -154,8 +155,10 @@ public class PerformanceManager : MonoBehaviour
         }
     }
 
-    private void ReceivePacket(MemoryPackPacket packet )
+    private void ReceiveMemoryPacket(MemoryPackPacket packet )
     {
+        Debug.Log( "Recv Memory Data" );
+
         if( _serverwatchDictionary.ContainsKey( packet.Message ) )
         {
             ServerWatch watch = _serverwatchDictionary[ packet.Message ];
