@@ -1,6 +1,8 @@
-﻿using MemoryPackChatServer;
+﻿
+MemoryPackChatServer.TcpChatServer memoryServer = new MemoryPackChatServer.TcpChatServer();
+CustomPacket.TcpChatServer customServer = new CustomPacket.TcpChatServer();
 
-TcpChatServer server = new TcpChatServer();
-server.Run();
+memoryServer.Run();
+customServer.Run();
 
 Console.ReadKey();

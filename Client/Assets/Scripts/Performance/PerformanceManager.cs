@@ -46,21 +46,7 @@ public class PerformanceManager : MonoBehaviour
 
         foreach(var cl in _clientsDictionary)
         {
-            if(cl.Key.Equals(ServerType.CSMemoryPack))
-            {
-                MemoryPackPacket packet = new();
-
-                packet.UserID = "tester";
-                packet.TimeStamp = DateTime.Now.ToString( "T" );
-                packet.Message = "Hello Test";
-
-                StartCoroutine(Send(packet));
-            }
-            else
-            {
-                var packet = new Packet("tester", DateTime.Now.ToString( "T" ), "Hello Test");
-                StartCoroutine(Send(cl.Key, packet));
-            }
+            
         }
     }
 
@@ -97,6 +83,16 @@ public class PerformanceManager : MonoBehaviour
             _clientsDictionary[ serverType ][i] = new T();
             _clientsDictionary[ serverType ][i].Init(serverType);
         }
+    }
+
+    private IEnumerator ClientSender(string userID)
+    {
+        yield return null;
+    }
+
+    private IEnumerator ClientMemorySender(string userID)
+    {
+        yield return null;
     }
 
     private IEnumerator Send( ServerType serverType, Packet packet )
