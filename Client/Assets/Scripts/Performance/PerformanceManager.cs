@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 public class PerformanceManager : MonoBehaviour
@@ -17,6 +18,7 @@ public class PerformanceManager : MonoBehaviour
     private TcpChatMemoryPackClient[] _memoryPackClients => _clientsDictionary[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
 
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
+    private Dictionary<string, Stopwatch> _stopwatch;
 
     #region Logic
 
@@ -82,20 +84,11 @@ public class PerformanceManager : MonoBehaviour
         {
             var panel = Instantiate(_performancePrefab, _contentTransform).GetComponent<PerformancePanel>();
 
-            panel.Init(GetLanguage(clients.Key));
+            panel.Init( Converter.GetLanguage( clients.Key ) );
 
             _performancePanels.Add(clients.Key, panel);
         }
     }
-
-    private string GetLanguage(ServerType serverType) => serverType switch
-    {
-        ServerType.CSCustom => "C#",
-        ServerType.CSMemoryPack => "C# MemoryPack",
-        ServerType.Cpp => "C++",
-        ServerType.Rust => "Rust",
-        _ => "Unknown"
-    };
 
     private void InitClients<T>(ServerType serverType) where T : TcpChatClient, new()
     {
