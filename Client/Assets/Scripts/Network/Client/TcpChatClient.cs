@@ -3,10 +3,10 @@ using UnityEngine;
 using System.Net.Sockets;
 using System;
 
-public class TcpChatCustomClient
+public class TcpChatClient
 {
-    private readonly TcpClient _client;
-    private const int Port = 7777;
+    protected TcpClient _client;
+    private int Port;
 
     private Action<Packet> OnReceivePacket;
 
@@ -15,16 +15,22 @@ public class TcpChatCustomClient
         OnReceivePacket += listener;
     }
 
-    public TcpChatCustomClient()
+    public TcpChatClient() { }
+
+    public TcpChatClient( ServerType st ) => Init(st);
+
+    public void Init(ServerType serverType)
     {
+        Port = (int)serverType;
+
         try
         {
             _client = new TcpClient();
-            _client.Connect("127.0.0.1", Port);
+            _client.Connect( "127.0.0.1", Port );
         }
-        catch (Exception e)
+        catch( Exception e )
         {
-            Debug.Log(e.Message);
+            Debug.Log( e.Message );
             Application.Quit();
         }
     }
@@ -38,7 +44,7 @@ public class TcpChatCustomClient
         stream.Flush();
     }
 
-    public IEnumerator Receive()
+    public virtual IEnumerator Receive()
     {
         var stream = _client.GetStream();
 

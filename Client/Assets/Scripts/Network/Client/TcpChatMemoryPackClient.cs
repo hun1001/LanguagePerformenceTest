@@ -4,30 +4,18 @@ using System.Net.Sockets;
 using MemoryPack;
 using System;
 
-public class TcpChatMsgPackClient
+public class TcpChatMemoryPackClient : TcpChatClient
 {
-    private readonly TcpClient _client;
-    private const int Port = 7777;
+    public TcpChatMemoryPackClient() : base() { }
+
+    public TcpChatMemoryPackClient( ServerType st) : base(st)
+    {   }
 
     private Action<MsgPackPacket> OnReceivePacket;
 
     public void AddReceivePacketListener(Action<MsgPackPacket> listener)
     {
         OnReceivePacket += listener;
-    }
-
-    public TcpChatMsgPackClient()
-    {
-        try
-        {
-            _client = new TcpClient();
-            _client.Connect("221.140.152.102", Port);
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e.Message);
-            Application.Quit();
-        }
     }
 
     public void Send(MsgPackPacket packet)
@@ -39,7 +27,7 @@ public class TcpChatMsgPackClient
         stream.Flush();
     }
 
-    public IEnumerator Receive()
+    public override IEnumerator Receive()
     {
         var stream = _client.GetStream();
 

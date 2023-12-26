@@ -1986,7 +1986,7 @@ GameObject:
   - component: {fileID: 1872008242}
   - component: {fileID: 1872008243}
   m_Layer: 0
-  m_Name: GameManager
+  m_Name: ChatManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2025,7 +2025,7 @@ MonoBehaviour:
   scrollbar: {fileID: 196096690}
   chatObject: {fileID: 9219034725965099919, guid: 122cd5b12001ec44a93799f0fbae9563, type: 3}
   clock: {fileID: 719204063}
-  protocol: 1
+  type: 1111
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

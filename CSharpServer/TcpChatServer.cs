@@ -11,7 +11,7 @@ namespace MemoryPackChatServer
 {
     public class TcpChatServer
     {
-        const int PORT = 7777;
+        const int PORT = 1111;
 
         private TcpListener _listener;
 
@@ -83,7 +83,7 @@ namespace CustomPacket
 {
     public class TcpChatServer
     {
-        const int PORT = 7777;
+        const int PORT = 2222;
 
         private TcpListener _listener;
 

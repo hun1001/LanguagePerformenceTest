@@ -55,7 +55,7 @@ int main()
 
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(7777);
+	addr.sin_port = htons(3333);
 	inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
 	if(bind(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR)

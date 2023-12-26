@@ -1,4 +1,4 @@
-﻿using CustomPacket;
+﻿using MemoryPackChatServer;
 
 TcpChatServer server = new TcpChatServer();
 server.Run();

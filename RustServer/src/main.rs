@@ -44,8 +44,8 @@ impl Packet {
 
 #[tokio::main]
 async fn main() {
-    let tcp = TcpListener::bind("127.0.0.1:7777").await.unwrap();
-    println!("Listening on port 7777");
+    let tcp = TcpListener::bind("127.0.0.1:4444").await.unwrap();
+    println!("Listening on port 4444");
 
     let mut writers: Vec<OwnedWriteHalf> = Vec::new();
 
