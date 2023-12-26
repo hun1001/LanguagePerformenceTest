@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
 using UnityEngine;
 
 public class PerformanceManager : MonoBehaviour
@@ -25,6 +23,10 @@ public class PerformanceManager : MonoBehaviour
 
     private void Awake()
     {
+        _clientsDictionary = new Dictionary<ServerType, TcpChatClient[]>();
+        _performancePanels = new Dictionary<ServerType, PerformancePanel>();
+        _serverwatchDictionary = new Dictionary<string, ServerWatch>();
+
         foreach( ServerType serverType in Enum.GetValues( typeof( ServerType ) ) )
         {
             _clientsDictionary.Add( serverType, new TcpChatClient[ _clientCount ] );
@@ -37,9 +39,6 @@ public class PerformanceManager : MonoBehaviour
                 InitClients<TcpChatClient>( serverType );
             }
         }
-
-        _performancePanels = new Dictionary<ServerType, PerformancePanel>();
-        _serverwatchDictionary = new Dictionary<string, ServerWatch>();
     }
 
     private void Start()
@@ -76,6 +75,7 @@ public class PerformanceManager : MonoBehaviour
         {
             if(clients.Key.Equals( ServerType.CSMemoryPack ) )
             {
+                while( clients.Value[ 0 ] == null ) { }
                 _memoryPackClients[ 0 ].AddReceivePacketListener( ReceivePacket );
             }
             else
@@ -145,13 +145,12 @@ public class PerformanceManager : MonoBehaviour
             ServerWatch watch = _serverwatchDictionary[ packet.Message ];
             watch.Stop();
 
-            var microseconds = watch.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
-            _performancePanels[ watch.ServerType ].Add( microseconds );
+            _performancePanels[ watch.ServerType ].Add( watch.GetMicroseconds() );
 
         }
         else
         {
-            UnityEngine.Debug.LogError( "Not Contain Key" );
+            Debug.LogError( "Not Contain Key" );
         }
     }
 
@@ -162,12 +161,11 @@ public class PerformanceManager : MonoBehaviour
             ServerWatch watch = _serverwatchDictionary[ packet.Message ];
             watch.Stop();
 
-            var microseconds = watch.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
-            _performancePanels[ watch.ServerType ].Add( microseconds );
+            _performancePanels[ watch.ServerType ].Add( watch.GetMicroseconds() );
         }
         else
         {
-            UnityEngine.Debug.LogError( "Not Contain Key" );
+            Debug.LogError( "Not Contain Key" );
         }
     }
 

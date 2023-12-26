@@ -8,4 +8,9 @@ public class ServerWatch : Stopwatch
     {
         ServerType = serverType;
     }
+
+    public long GetMicroseconds()
+    {
+        return ElapsedTicks / (Frequency / (1000L * 1000L));
+    }
 }

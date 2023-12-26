@@ -961,7 +961,7 @@ MonoBehaviour:
   _clientCount: 100
   _aClientSendCount: 10
   _contentTransform: {fileID: 1812558646}
-  _performancePrefab: {fileID: 3598297393108869893, guid: ed3f9de1eeaf2ba46af869cc862e70f7, type: 3}
+  _performancePrefab: {fileID: 2095714554733775100, guid: ed3f9de1eeaf2ba46af869cc862e70f7, type: 3}
 --- !u!1 &1812558645
 GameObject:
   m_ObjectHideFlags: 0
