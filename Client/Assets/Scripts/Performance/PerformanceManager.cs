@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,7 +33,7 @@ public class PerformanceManager : MonoBehaviour
             _clientsDictionary.Add(serverType, new TcpChatClient[_clientCount]);
             if (serverType.Equals(ServerType.CSMemoryPack))
             {
-                //InitClients<TcpChatMemoryPackClient>( serverType );
+                InitClients<TcpChatMemoryPackClient>( serverType );
             }
             else
             {
@@ -48,12 +49,17 @@ public class PerformanceManager : MonoBehaviour
 
         foreach (var cl in _clientsDictionary)
         {
+            if(TcpChatClient.IsFailedServer(cl.Key))
+            {
+                continue;
+            }
+
             if (cl.Key.Equals(ServerType.CSMemoryPack))
             {
-                // for (int i = 0; i < _clientCount; ++i)
-                // {
-                //     //StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
-                // }
+                for( int i = 0; i < _clientCount; ++i )
+                {
+                    StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
+                }
             }
             else
             {
@@ -73,9 +79,14 @@ public class PerformanceManager : MonoBehaviour
     {
         foreach (var clients in _clientsDictionary)
         {
+            if(TcpChatClient.IsFailedServer(clients.Key))
+            {
+                continue;
+            }
+
             if (clients.Key.Equals(ServerType.CSMemoryPack))
             {
-                //(clients.Value[ 0 ] as TcpChatMemoryPackClient).AddReceivePacketListener( ReceiveMemoryPacket );
+                MemoryPackClients[0].AddReceivePacketListener( ReceiveMemoryPacket );
             }
             else
             {
@@ -88,6 +99,11 @@ public class PerformanceManager : MonoBehaviour
     {
         foreach (var clients in _clientsDictionary)
         {
+            if(TcpChatClient.IsFailedServer(clients.Key))
+            {
+                continue;
+            }
+
             var panel = Instantiate(_performancePrefab, _contentTransform).GetComponent<PerformancePanel>();
 
             panel.Init(Converter.GetLanguage(clients.Key));
@@ -131,7 +147,7 @@ public class PerformanceManager : MonoBehaviour
             _serverWatchDictionary.Add(msg, new ServerWatch(ServerType.CSMemoryPack));
 
             _serverWatchDictionary[msg].Start();
-            _clientsDictionary[ServerType.CSMemoryPack][index].Send(packet);
+            MemoryPackClients[ index].Send(packet);
 
             yield return null;
         }

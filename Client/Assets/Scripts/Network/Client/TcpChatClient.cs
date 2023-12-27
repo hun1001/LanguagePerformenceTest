@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public class TcpChatClient
 {
     private static readonly Dictionary<ServerType, bool> FailedServerDictionary = new();
+    public static bool IsFailedServer(ServerType serverType) => FailedServerDictionary.ContainsKey(serverType) && FailedServerDictionary[serverType];
 
     protected TcpClient _client;
     private int Port;
@@ -39,6 +40,7 @@ public class TcpChatClient
             if (_client.ConnectAsync("127.0.0.1", Port).Wait(1000))
             {
                 Debug.Log($"Connected to server {serverType}");
+                FailedServerDictionary[serverType] = false;
             }
             else
             {
