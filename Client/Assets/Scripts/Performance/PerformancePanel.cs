@@ -24,6 +24,8 @@ public class PerformancePanel : MonoBehaviour
 
     public void Add(long latency)
     {
+        Debug.Log( $"Add {languageText.text} Latency" );
+
         _sumLatency += latency;
         ++_recvCount;
 

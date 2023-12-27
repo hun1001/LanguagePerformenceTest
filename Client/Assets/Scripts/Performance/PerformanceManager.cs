@@ -19,6 +19,7 @@ public class PerformanceManager : MonoBehaviour
 
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
     private Dictionary<string, ServerWatch> _serverWatchDictionary;
+    private object _lockObject = new object();
 
     #region Logic
 
@@ -42,7 +43,7 @@ public class PerformanceManager : MonoBehaviour
         }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         SetBaseClient();
         SetPerformancePanel();
@@ -54,19 +55,23 @@ public class PerformanceManager : MonoBehaviour
                 continue;
             }
 
-            if (cl.Key.Equals(ServerType.CSMemoryPack))
+            for( int j = 0; j < _aClientSendCount; ++j )
             {
-                for( int i = 0; i < _clientCount; ++i )
+                if( cl.Key.Equals( ServerType.CSMemoryPack ) )
                 {
-                    StartCoroutine( ClientMemorySender( $"Test{i}", i ) );
+                    for( int i = 0; i < _clientCount; ++i )
+                    {
+                        ClientMemorySender( $"Test{i}", i );
+                    }
                 }
-            }
-            else
-            {
-                for (var i = 0; i < _clientCount; ++i)
+                else
                 {
-                    StartCoroutine(ClientSender(cl.Key, $"Test{i}", i));
+                    for( var i = 0; i < _clientCount; ++i )
+                    {
+                        ClientSender( cl.Key, $"Test{i}", i );
+                    }
                 }
+                yield return null;
             }
         }
     }
@@ -87,10 +92,12 @@ public class PerformanceManager : MonoBehaviour
             if (clients.Key.Equals(ServerType.CSMemoryPack))
             {
                 MemoryPackClients[0].AddReceivePacketListener( ReceiveMemoryPacket );
+                StartCoroutine( MemoryPackClients[0].Receive());
             }
             else
             {
                 clients.Value[0].AddReceivePacketListener(ReceivePacket);
+                StartCoroutine( clients.Value[0].Receive());
             }
         }
     }
@@ -121,69 +128,62 @@ public class PerformanceManager : MonoBehaviour
         }
     }
 
-    private IEnumerator ClientSender(ServerType serverType, string userID, int index)
+    private void ClientSender(ServerType serverType, string userID, int index)
     {
-        for (var i = 0; i < _aClientSendCount; ++i)
-        {
-            var msg = MessageGenerator.newMessage();
-            var packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
+        var msg = MessageGenerator.newMessage();
+        var packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
 
-            _serverWatchDictionary.Add(msg, new ServerWatch(serverType));
+        _serverWatchDictionary.Add(msg, new ServerWatch(serverType));
 
-            _serverWatchDictionary[msg].Start();
-            _clientsDictionary[serverType][index].Send(packet);
-
-            yield return null;
-        }
+        _serverWatchDictionary[msg].Start();
+        _clientsDictionary[serverType][index].Send(packet);    
     }
 
-    private IEnumerator ClientMemorySender(string userID, int index)
+    private void ClientMemorySender(string userID, int index)
     {
-        for (var i = 0; i < _aClientSendCount; ++i)
+        var msg = MessageGenerator.newMessage();
+        var packet = new MemoryPackPacket
         {
-            var msg = MessageGenerator.newMessage();
-            var packet = new Packet(userID, DateTime.Now.ToString("T"), msg);
+            UserID = userID,
+            TimeStamp = DateTime.Now.ToString("T"),
+            Message = msg
+        };
 
-            _serverWatchDictionary.Add(msg, new ServerWatch(ServerType.CSMemoryPack));
+        _serverWatchDictionary.Add( msg, new ServerWatch( ServerType.CSMemoryPack ) );
 
-            _serverWatchDictionary[msg].Start();
-            MemoryPackClients[ index].Send(packet);
-
-            yield return null;
-        }
+        _serverWatchDictionary[ msg ].Start();
+        MemoryPackClients[ index ].Send( packet );
     }
 
     private void ReceivePacket(Packet packet)
     {
-        Debug.Log("Recv Packet Data");
-
-        if (_serverWatchDictionary.ContainsKey(packet.Message))
+        Debug.Log( "Receive" );
+        if( _serverWatchDictionary.ContainsKey( packet.Message ) )
         {
             var watch = _serverWatchDictionary[packet.Message];
             watch.Stop();
 
-            _performancePanels[watch.ServerType].Add(watch.GetMicroseconds());
+            _performancePanels[ watch.ServerType ].Add( watch.GetMicroseconds() );
         }
         else
         {
-            Debug.LogError("Not Contain Key");
+            Debug.LogError( $"Not Found Key {packet.Message}" );
         }
     }
 
     private void ReceiveMemoryPacket(MemoryPackPacket packet)
     {
-        Debug.Log("Recv Memory Data");
-
-        if (_serverWatchDictionary.ContainsKey(packet.Message))
+        Debug.Log( "Receive" );
+        if( _serverWatchDictionary.ContainsKey( packet.Message ) )
         {
             var watch = _serverWatchDictionary[packet.Message];
             watch.Stop();
 
-            _performancePanels[watch.ServerType].Add(watch.GetMicroseconds());
+            _performancePanels[ watch.ServerType ].Add( watch.GetMicroseconds() );
         }
         else
         {
-            Debug.LogError("Not Contain Key");
+            Debug.LogError( $"Not Found Key {packet.Message}" );
         }
     }
 

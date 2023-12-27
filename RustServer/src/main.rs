@@ -125,7 +125,8 @@ async fn handle_message(writers: &mut Vec<Client>, packet: &Message) {
     for writer in writers.iter_mut() {
         match packet {
             Message::Packet(packet) => {
-                println!("Received packet: {:?}", packet);
+                // 성능 이슈가 심각하여 잠시 주석
+                // println!("Received packet: {:?}", packet);
 
                 if let Err(e) = writer.writer.write_all(&packet.serialize()).await {
                     println!("Failed to write to socket: {}", e);

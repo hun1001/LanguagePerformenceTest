@@ -60,8 +60,6 @@ public class TcpChatClient
         if (_client is not { Connected: true })
             return;
 
-        Debug.Log($"Send Packet Data: {packet.Message}");
-
         var bin = packet.Serialize();
         var stream = _client.GetStream();
 
@@ -71,7 +69,6 @@ public class TcpChatClient
 
     public virtual IEnumerator Receive()
     {
-        Debug.Log("Start Receive");
         var stream = _client.GetStream();
 
         while (true)
@@ -83,8 +80,6 @@ public class TcpChatClient
 
                 var packet = Packet.Deserialize(bin);
                 OnReceivePacket?.Invoke(packet);
-
-                Debug.Log($"Recv Packet Data: {packet.Message}");
             }
 
             yield return null;
