@@ -19,7 +19,6 @@ public class PerformanceManager : MonoBehaviour
 
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
     private Dictionary<string, ServerWatch> _serverWatchDictionary;
-    private object _lockObject = new object();
 
     #region Logic
 
@@ -61,14 +60,14 @@ public class PerformanceManager : MonoBehaviour
                 {
                     for( int i = 0; i < _clientCount; ++i )
                     {
-                        ClientMemorySender( $"Test{i}", i );
+                        ClientMemorySender( $"{Converter.GetLanguage(cl.Key)}_Test{i}", i );
                     }
                 }
                 else
                 {
                     for( var i = 0; i < _clientCount; ++i )
                     {
-                        ClientSender( cl.Key, $"Test{i}", i );
+                        ClientSender( cl.Key, $"{Converter.GetLanguage( cl.Key )}_Test{i}", i );
                     }
                 }
                 yield return null;
@@ -157,7 +156,6 @@ public class PerformanceManager : MonoBehaviour
 
     private void ReceivePacket(Packet packet)
     {
-        Debug.Log( "Receive" );
         if( _serverWatchDictionary.ContainsKey( packet.Message ) )
         {
             var watch = _serverWatchDictionary[packet.Message];
@@ -167,13 +165,12 @@ public class PerformanceManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError( $"Not Found Key {packet.Message}" );
+            Debug.LogError( $"Not Found Key" );
         }
     }
 
     private void ReceiveMemoryPacket(MemoryPackPacket packet)
     {
-        Debug.Log( "Receive" );
         if( _serverWatchDictionary.ContainsKey( packet.Message ) )
         {
             var watch = _serverWatchDictionary[packet.Message];
@@ -183,7 +180,7 @@ public class PerformanceManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError( $"Not Found Key {packet.Message}" );
+            Debug.LogError( $"Not Found Key" );
         }
     }
 

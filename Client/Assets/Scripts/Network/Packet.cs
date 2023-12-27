@@ -45,4 +45,9 @@ public struct Packet
 
         return new Packet(userID, timeStamp, message);
     }
+
+    public override string ToString()
+    {
+        return $"UserID: {UserID}, TimeStamp: {TimeStamp}, Message: {Message}";
+    }
 }
