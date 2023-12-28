@@ -61,6 +61,7 @@ public class PerformanceManager : MonoBehaviour
                     for( int i = 0; i < _clientCount; ++i )
                     {
                         ClientMemorySender( $"{Converter.GetLanguage(cl.Key)}_Test{i}", i );
+                        yield return new WaitForSeconds( 0.1f );
                     }
                 }
                 else
@@ -68,6 +69,7 @@ public class PerformanceManager : MonoBehaviour
                     for( var i = 0; i < _clientCount; ++i )
                     {
                         ClientSender( cl.Key, $"{Converter.GetLanguage( cl.Key )}_Test{i}", i );
+                        yield return new WaitForSeconds( 0.1f );
                     }
                 }
                 yield return null;
@@ -156,7 +158,7 @@ public class PerformanceManager : MonoBehaviour
 
     private void ReceivePacket(Packet packet)
     {
-        if( _serverWatchDictionary.ContainsKey( packet.Message ) )
+        if( _serverWatchDictionary.ContainsKey( packet.Message) )
         {
             var watch = _serverWatchDictionary[packet.Message];
             watch.Stop();
@@ -165,7 +167,7 @@ public class PerformanceManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError( $"Not Found Key" );
+            Debug.LogError( $"Not Found Key {packet.Message}" );
         }
     }
 
@@ -180,7 +182,7 @@ public class PerformanceManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError( $"Not Found Key" );
+            Debug.LogError( $"Not Found Key {packet.Message}" );
         }
     }
 

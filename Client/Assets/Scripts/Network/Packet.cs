@@ -43,6 +43,22 @@ public struct Packet
         var timeStamp = splitData[1];
         var message = splitData[2];
 
+        int realMessageLength = 0;
+
+        foreach (var c in message)
+        {
+            if (c != '\0')
+            {
+                realMessageLength++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        message = message.Substring(0, realMessageLength);
+
         return new Packet(userID, timeStamp, message);
     }
 

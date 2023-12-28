@@ -9,8 +9,8 @@ public class PerformancePanel : MonoBehaviour
     [SerializeField] private Text InformationText;
 
     private long _avrLatency = 0;
-    private long _minLatency = 0;
-    private long _maxLatency = 0;
+    private long _minLatency = long.MaxValue;
+    private long _maxLatency = long.MinValue;
 
     private long _sumLatency = 0;
     private long _recvCount = 0;
@@ -24,8 +24,6 @@ public class PerformancePanel : MonoBehaviour
 
     public void Add(long latency)
     {
-        Debug.Log( $"Add {languageText.text} Latency" );
-
         _sumLatency += latency;
         ++_recvCount;
 
