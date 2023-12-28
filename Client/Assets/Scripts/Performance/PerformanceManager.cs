@@ -16,8 +16,7 @@ public class PerformanceManager : MonoBehaviour
 
     private Dictionary<ServerType, TcpChatClient[]> _clientsDictionary;
 
-    private TcpChatMemoryPackClient[] MemoryPackClients =>
-        _clientsDictionary[ServerType.CSMemoryPack] as TcpChatMemoryPackClient[];
+    private TcpChatMemoryPackClient GetMemoryPackClient(int i) => _clientsDictionary[ ServerType.CSMemoryPack ][i] as TcpChatMemoryPackClient;
 
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
     private Dictionary<string, ServerWatch> _serverWatchDictionary;
@@ -104,8 +103,8 @@ public class PerformanceManager : MonoBehaviour
 
             if (clients.Key.Equals(ServerType.CSMemoryPack))
             {
-                MemoryPackClients[0].AddReceivePacketListener( ReceiveMemoryPacket );
-                StartCoroutine( MemoryPackClients[0].Receive());
+                GetMemoryPackClient(0).AddReceivePacketListener( ReceiveMemoryPacket );
+                StartCoroutine( GetMemoryPackClient( 0 ).Receive());
             }
             else
             {
@@ -165,7 +164,7 @@ public class PerformanceManager : MonoBehaviour
         _serverWatchDictionary.Add( msg, new ServerWatch( ServerType.CSMemoryPack ) );
 
         _serverWatchDictionary[ msg ].Start();
-        MemoryPackClients[ index ].Send( packet );
+        GetMemoryPackClient( index ).Send( packet );
     }
 
     private void ReceivePacket(Packet packet)
