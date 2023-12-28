@@ -3,6 +3,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::{TcpListener, TcpStream};
 use bytes::{Bytes, BytesMut};
+use log::{debug, error, info};
 
 #[derive(Debug)]
 struct Packet {
@@ -69,12 +70,12 @@ async fn accept_loop(tcp: TcpListener, socket_sender: Sender<TcpStream>) {
         };
 
         if let Err(e) = socket_sender.send(socket).await {
-            println!("Failed to send socket: {}", e);
+            error!("Failed to send socket: {}", e);
         }
     }
 }
 
-fn handle_new_connection(writers: &mut Vec<Client>, sender: Sender<Message>, socket: TcpStream, id: i32) {
+fn handle_new_connection(writers: &mut Vec<Client>, sender: Sender<Packet>, dead_sender: Sender<i32>, socket: TcpStream, id: i32) {
     let (mut reader, writer) = socket.into_split();
 
     let client = Client {
@@ -84,7 +85,7 @@ fn handle_new_connection(writers: &mut Vec<Client>, sender: Sender<Message>, soc
 
     writers.push(client);
 
-    println!("New connection: {}", id);
+    debug!("New connection: {}", id);
 
     tokio::spawn(async move {
         let mut buf = [0; 1024];
@@ -95,11 +96,11 @@ fn handle_new_connection(writers: &mut Vec<Client>, sender: Sender<Message>, soc
                         return;
                     }
                     n
-                },
+                }
                 Err(e) => {
-                    println!("Failed to read from socket {}: {}", id, e);
-                    if let Err(e) = sender.send(Message::Failed(id)).await {
-                        println!("Failed to send failed message: {}", e);
+                    error!("Failed to read from socket {}: {}", id, e);
+                    if let Err(e) = dead_sender.send(id).await {
+                        error!("Failed to send failed message: {}", e);
                     }
                     return;
                 }
@@ -111,74 +112,56 @@ fn handle_new_connection(writers: &mut Vec<Client>, sender: Sender<Message>, soc
 
             let packet = Packet::deserialize(&buf);
 
-            if let Err(e) = sender.send(Message::Packet(packet)).await {
-                println!("Failed to send message: {}", e);
+            if let Err(e) = sender.send(packet).await {
+                error!("Failed to send message: {}", e);
                 return;
             }
         }
     });
 }
 
-async fn handle_message(writers: &mut Vec<Client>, packet: &Message) {
-    let mut clients_for_removal: Vec<i32> = Vec::new();
+async fn handle_message(writers: &mut Vec<Client>, packet: &Packet) {
+    debug!("Message: {:?}", packet);
 
     for writer in writers.iter_mut() {
-        match packet {
-            Message::Packet(packet) => {
-                // 성능 이슈가 심각하여 잠시 주석
-                // println!("Received packet: {:?}", packet);
-
-                if let Err(e) = writer.writer.write_all(&packet.serialize()).await {
-                    println!("Failed to write to socket: {}", e);
-                }
-
-                if let Err(e) = writer.writer.flush().await {
-                    println!("Failed to flush socket: {}", e);
-                }
-            }
-            Message::Failed(id) => {
-                if writer.id == *id {
-                    clients_for_removal.push(*id);
-                }
-            }
+        if let Err(e) = writer.writer.write_all(&packet.serialize()).await {
+            error!("Failed to write to socket: {}", e);
         }
-    }
-
-    for id in clients_for_removal {
-        writers.retain(|client| client.id != id);
     }
 }
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     let tcp = match TcpListener::bind("127.0.0.1:4444").await {
         Ok(tcp) => tcp,
         Err(e) => panic!("Failed to bind to port 4444: {}", e),
     };
 
-    println!("Listening on port 4444");
+    info!("Listening on port 4444");
 
     let mut writers: Vec<Client> = Vec::new();
 
-    let (packet_sender, mut packet_receiver) = channel::<Message>(1000);
+    let (packet_sender, mut packet_receiver) = channel::<Packet>(1000);
     let (socket_sender, mut socket_receiver) = channel::<TcpStream>(1000);
+    let (dead_sender, mut dead_receiver) = channel::<i32>(1000);
 
     tokio::spawn(accept_loop(tcp, socket_sender));
 
     let mut id = 0;
-    //let mut recv_data_count = 0;
 
     loop {
         tokio::select! {
             Some(socket) = socket_receiver.recv() => {
                 id += 1;
-                handle_new_connection(&mut writers, packet_sender.clone(), socket, id);
+                handle_new_connection(&mut writers, packet_sender.clone(), dead_sender.clone(), socket, id);
             }
             Some(packet) = packet_receiver.recv() => {
-                //recv_data_count += 1;
-                handle_message(&mut writers, &packet).await;
-
-                //print!("recv_data_count: {}\r", recv_data_count)
+                tokio::spawn(handle_message(&mut writers, &packet));
+            }
+            Some(id) = dead_receiver.recv() => {
+                writers.retain(|client| client.id != id);
             }
         }
     }
