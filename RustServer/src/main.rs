@@ -121,6 +121,8 @@ fn handle_new_connection(writers: &mut Vec<Client>, sender: Sender<Packet>, dead
 }
 
 async fn handle_message(writers: &mut Vec<Client>, packet: &Packet) {
+    debug!("Message: {:?}", packet);
+
     for writer in writers.iter_mut() {
         if let Err(e) = writer.writer.write_all(&packet.serialize()).await {
             error!("Failed to write to socket: {}", e);
@@ -148,7 +150,6 @@ async fn main() {
     tokio::spawn(accept_loop(tcp, socket_sender));
 
     let mut id = 0;
-    //let mut recv_data_count = 0;
 
     loop {
         tokio::select! {
