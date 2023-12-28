@@ -1,4 +1,4 @@
-use tokio::sync::mpsc::{channel, Sender, unbounded_channel};
+use tokio::sync::mpsc::{channel, Sender};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::{TcpListener, TcpStream};
@@ -166,6 +166,7 @@ async fn main() {
     tokio::spawn(accept_loop(tcp, socket_sender));
 
     let mut id = 0;
+    //let mut recv_data_count = 0;
 
     loop {
         tokio::select! {
@@ -174,7 +175,10 @@ async fn main() {
                 handle_new_connection(&mut writers, packet_sender.clone(), socket, id);
             }
             Some(packet) = packet_receiver.recv() => {
+                //recv_data_count += 1;
                 handle_message(&mut writers, &packet).await;
+
+                //print!("recv_data_count: {}\r", recv_data_count)
             }
         }
     }

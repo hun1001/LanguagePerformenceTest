@@ -48,7 +48,7 @@ public class PerformanceManager : MonoBehaviour
         }
     }
 
-    private IEnumerator Start()
+    private void Start()
     {
         SetBaseClient();
         SetPerformancePanel();
@@ -60,31 +60,38 @@ public class PerformanceManager : MonoBehaviour
                 continue;
             }
 
-            for( int j = 0; j < _aClientSendCount; ++j )
-            {
-                if( cl.Key.Equals( ServerType.CSMemoryPack ) )
-                {
-                    for( int i = 0; i < _clientCount; ++i )
-                    {
-                        ClientMemorySender( $"{Converter.GetLanguage(cl.Key)}_Test{i}", i );
-                        yield return _clientSendDelaySeconds;
-                    }
-                }
-                else
-                {
-                    for( var i = 0; i < _clientCount; ++i )
-                    {
-                        ClientSender( cl.Key, $"{Converter.GetLanguage( cl.Key )}_Test{i}", i );
-                        yield return _clientSendDelaySeconds;
-                    }
-                }
-            }
+            SendStart(cl.Key);
         }
     }
 
     #endregion
 
     #region Methods
+
+    public void SendStart( ServerType serverType ) => StartCoroutine( SendStartCoroutine( serverType ) );
+
+    private IEnumerator SendStartCoroutine(ServerType serverType)
+    {
+        for( int j = 0; j < _aClientSendCount; ++j )
+        {
+            if( serverType.Equals( ServerType.CSMemoryPack ) )
+            {
+                for( int i = 0; i < _clientCount; ++i )
+                {
+                    ClientMemorySender( $"{Converter.GetLanguage( serverType )}_Test{i}", i );
+                    yield return _clientSendDelaySeconds;
+                }
+            }
+            else
+            {
+                for( var i = 0; i < _clientCount; ++i )
+                {
+                    ClientSender( serverType, $"{Converter.GetLanguage( serverType )}_Test{i}", i );
+                    yield return _clientSendDelaySeconds;
+                }
+            }
+        }
+    }
 
     private void SetBaseClient()
     {
