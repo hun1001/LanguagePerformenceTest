@@ -2,12 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PerformanceManager : MonoBehaviour
 {
-    [Header("Settings")] 
+    [Header("Settings")]
+    [Range(1, 1000)]
     [SerializeField] private int _clientCount = 100;
     [SerializeField] private int _aClientSendCount = 10;
+
+    [Space(10)]
 
     [SerializeField] private float _clientSendDelay = 0f;
 
