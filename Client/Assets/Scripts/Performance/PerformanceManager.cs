@@ -61,7 +61,6 @@ public class PerformanceManager : MonoBehaviour
                     for( int i = 0; i < _clientCount; ++i )
                     {
                         ClientMemorySender( $"{Converter.GetLanguage(cl.Key)}_Test{i}", i );
-                        yield return new WaitForSeconds( 0.1f );
                     }
                 }
                 else
@@ -69,7 +68,6 @@ public class PerformanceManager : MonoBehaviour
                     for( var i = 0; i < _clientCount; ++i )
                     {
                         ClientSender( cl.Key, $"{Converter.GetLanguage( cl.Key )}_Test{i}", i );
-                        yield return new WaitForSeconds( 0.1f );
                     }
                 }
                 yield return null;
