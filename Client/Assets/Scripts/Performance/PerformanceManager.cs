@@ -5,8 +5,11 @@ using UnityEngine;
 
 public class PerformanceManager : MonoBehaviour
 {
-    [Header("Settings")] [SerializeField] private int _clientCount = 100;
+    [Header("Settings")] 
+    [SerializeField] private int _clientCount = 100;
     [SerializeField] private int _aClientSendCount = 10;
+
+    [SerializeField] private float _clientSendDelay = 0f;
 
     [Header("UI")] [SerializeField] private Transform _contentTransform;
     [SerializeField] private PerformancePanel _performancePrefab;
@@ -19,6 +22,8 @@ public class PerformanceManager : MonoBehaviour
     private Dictionary<ServerType, PerformancePanel> _performancePanels;
     private Dictionary<string, ServerWatch> _serverWatchDictionary;
 
+    private WaitForSeconds _clientSendDelaySeconds;
+
     #region Logic
 
     private void Awake()
@@ -26,6 +31,8 @@ public class PerformanceManager : MonoBehaviour
         _clientsDictionary = new Dictionary<ServerType, TcpChatClient[]>();
         _performancePanels = new Dictionary<ServerType, PerformancePanel>();
         _serverWatchDictionary = new Dictionary<string, ServerWatch>();
+
+        _clientSendDelaySeconds = new WaitForSeconds(_clientSendDelay);
 
         foreach (ServerType serverType in Enum.GetValues(typeof(ServerType)))
         {
@@ -60,6 +67,7 @@ public class PerformanceManager : MonoBehaviour
                     for( int i = 0; i < _clientCount; ++i )
                     {
                         ClientMemorySender( $"{Converter.GetLanguage(cl.Key)}_Test{i}", i );
+                        yield return _clientSendDelaySeconds;
                     }
                 }
                 else
@@ -67,9 +75,9 @@ public class PerformanceManager : MonoBehaviour
                     for( var i = 0; i < _clientCount; ++i )
                     {
                         ClientSender( cl.Key, $"{Converter.GetLanguage( cl.Key )}_Test{i}", i );
+                        yield return _clientSendDelaySeconds;
                     }
                 }
-                yield return null;
             }
         }
     }
@@ -182,6 +190,5 @@ public class PerformanceManager : MonoBehaviour
             Debug.LogError( $"Not Found Key {packet.Message}" );
         }
     }
-
     #endregion
 }

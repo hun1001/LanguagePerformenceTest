@@ -1,4 +1,4 @@
-use tokio::sync::mpsc::{channel, Sender};
+use tokio::sync::mpsc::{channel, Sender, unbounded_channel};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::{TcpListener, TcpStream};
@@ -160,8 +160,8 @@ async fn main() {
 
     let mut writers: Vec<Client> = Vec::new();
 
-    let (packet_sender, mut packet_receiver) = channel::<Message>(100);
-    let (socket_sender, mut socket_receiver) = channel::<TcpStream>(100);
+    let (packet_sender, mut packet_receiver) = channel::<Message>(1000);
+    let (socket_sender, mut socket_receiver) = channel::<TcpStream>(1000);
 
     tokio::spawn(accept_loop(tcp, socket_sender));
 
