@@ -1,4 +1,5 @@
 using MemoryPack;
+using MessagePack;
 using System;
 using System.Text;
 
@@ -52,4 +53,17 @@ public struct Packet
     {
         return $"UserID: {UserID}, TimeStamp: {TimeStamp}, Message: {Message}";
     }
+}
+
+[MessagePackObject]
+public class MsgPackPacket
+{
+    [Key(0)]
+    public string UserID { get; set; }
+
+    [Key(1)]
+    public string TimeStamp { get; set; }
+
+    [Key(2)]
+    public string Message { get; set; }
 }
