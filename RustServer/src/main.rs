@@ -56,6 +56,7 @@ impl Packet {
 async fn handle_client(mut stream: TcpStream, tx: Sender<Packet>) {
     let mut buf = [0; 1024];
     let mut buf_len = 0;
+    let mut next_packet_size = 0;
     let mut is_next_packet = true;
 
     let mut read_buf = [0; 1024];
@@ -71,23 +72,59 @@ async fn handle_client(mut stream: TcpStream, tx: Sender<Packet>) {
                     break;
                 }
 
-                if is_next_packet {
-                    buf_len = 0;
-                    is_next_packet = false;
-                }
+                buf[buf_len..buf_len + n].copy_from_slice(&read_buf[..n]);
 
-                let packet = Packet::deserialize(&read_buf[..n]);
+                debug!("Buffer length: {} + {}", buf_len, n);
 
-                debug!("Received packet: {:?}", packet);
+                buf_len += n;
 
-                if let Err(e) = tx.send(packet) {
-                    error!("Failed to send packet: {}", e);
-                    break;
+                loop {
+                    if is_next_packet {
+                        if buf_len < 4 {
+                            break;
+                        }
+
+                        next_packet_size = i32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+                        buf_len -= 4;
+
+                        buf.copy_within(4..4 + buf_len, 0);
+
+                        debug!("Next packet size: {}", next_packet_size);
+                    }
+
+                    if buf_len < next_packet_size {
+                        is_next_packet = false;
+                        debug!("Not enough data: {} < {}", buf_len, next_packet_size);
+                        break;
+                    }
+
+                    buf_len -= next_packet_size;
+
+                    let packet = Packet::deserialize(&buf[..next_packet_size]);
+
+                    buf.copy_within(next_packet_size.., 0);
+
+                    debug!("Received packet: {:?}", packet);
+
+                    if let Err(e) = tx.send(packet) {
+                        error!("Failed to send packet: {}", e);
+                        break;
+                    }
+
+                    is_next_packet = true;
                 }
             }
             Ok(packet) = rx.recv() => {
                 debug!("Sending packet: {:?}", packet);
-                if let Err(e) = write.write_all(&packet.serialize()).await {
+
+                let packet = packet.serialize();
+                let packet_size = (packet.len() as i32).to_be_bytes();
+
+                let mut buf = BytesMut::new();
+                buf.extend_from_slice(&packet_size);
+                buf.extend_from_slice(&packet);
+
+                if let Err(e) = write.write_all(&buf).await {
                     error!("Failed to write to socket: {}", e);
                     break;
                 }
@@ -127,6 +164,7 @@ async fn main() {
 #[cfg(test)]
 mod tests {
     use std::sync::Once;
+
     use super::*;
 
     static INIT: Once = Once::new();
@@ -199,15 +237,63 @@ mod tests {
             message: String::from("Hello, world!"),
         };
 
-        let buf = packet.serialize();
+        let packet_buf = packet.serialize();
+        let packet_size = (packet_buf.len() as i32).to_be_bytes();
+
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(&packet_size);
+        buf.extend_from_slice(&packet_buf);
 
         stream.write_all(&buf).await.unwrap();
 
-        let mut buf = [0; 1024];
-        let n = stream.read(&mut buf).await.unwrap();
-        let packet = Packet::deserialize(&buf[..n]);
+        let mut buf = [0; 4];
+        _ = stream.read(&mut buf).await.unwrap();
+        let packet_size = i32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+        debug!("Packet size: {}", packet_size);
+
+        let mut buf = vec![0; packet_size];
+        _ = stream.read(&mut buf).await.unwrap();
+        let packet = Packet::deserialize(&buf);
+        debug!("Packet: {:?}", packet);
 
         assert_eq!(packet.user_id, "test");
+    }
+
+    #[tokio::test]
+    async fn test_server_100() {
+        init();
+        tokio::spawn(run_server(44447));
+
+        let mut stream = TcpStream::connect("127.0.0.1:44447").await.unwrap();
+
+        for _ in 0..100 {
+            let packet = Packet {
+                user_id: String::from("test"),
+                time_stamp: String::from("2021-01-01 00:00:00"),
+                message: String::from("Hello, world!"),
+            };
+
+            let packet_buf = packet.serialize();
+            let packet_size = (packet_buf.len() as i32).to_be_bytes();
+
+            let mut buf = BytesMut::new();
+            buf.extend_from_slice(&packet_size);
+            buf.extend_from_slice(&packet_buf);
+
+            stream.write_all(&buf).await.unwrap();
+
+            let mut buf = [0; 4];
+            _ = stream.read(&mut buf).await.unwrap();
+            let packet_size = i32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+            debug!("Packet size: {}", packet_size);
+
+            let mut buf = vec![0; packet_size];
+            _ = stream.read(&mut buf).await.unwrap();
+            let packet = Packet::deserialize(&buf);
+            debug!("Packet: {:?}", packet);
+
+            assert_eq!(packet.user_id, "test");
+        }
     }
 
     #[tokio::test]
@@ -235,7 +321,12 @@ mod tests {
                         message: format!("Hello, world! {}", packet_num),
                     };
 
-                    let buf = packet.serialize();
+                    let packet_buf = packet.serialize();
+                    let packet_size = (packet_buf.len() as i32).to_be_bytes();
+
+                    let mut buf = BytesMut::new();
+                    buf.extend_from_slice(&packet_size);
+                    buf.extend_from_slice(&packet_buf);
 
                     stream.write_all(&buf).await.unwrap();
 
@@ -245,9 +336,13 @@ mod tests {
                 packet_num = i * PACKET_COUNT;
 
                 loop {
-                    let mut buf = [0; 1024];
-                    let n = stream.read(&mut buf).await.unwrap();
-                    let packet = Packet::deserialize(&buf[..n]);
+                    let mut buf = [0; 4];
+                    _ = stream.read(&mut buf).await.unwrap();
+                    let packet_size = i32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+
+                    let mut buf = vec![0; packet_size];
+                    _ = stream.read(&mut buf).await.unwrap();
+                    let packet = Packet::deserialize(&buf);
 
                     if packet.message != format!("Hello, world! {}", packet_num) {
                         continue;
